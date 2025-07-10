@@ -17,6 +17,7 @@ def assign_attributes_from_dict(obj: BaseModel, data: dict):
         else:
             print(f"⚠️ Поле '{key}' не визначене у {obj.__class__.__name__}, пропущено.")
 
+# -------------------------------------------------------------------------------------------
 
 import redis
 
@@ -26,5 +27,4 @@ redis_client = redis.Redis(host='localhost', port=6379, db=0)
 CHANNEL = "log_channel"
 
 def sse_log(message: str):
-    print("SSE_LOG:", message)
     redis_client.publish(CHANNEL, message)

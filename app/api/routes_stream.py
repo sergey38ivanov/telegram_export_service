@@ -1,15 +1,26 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 import asyncio
+from redis.asyncio import Redis
 
 router = APIRouter()
 
-async def event_generator():
-    for i in range(1, 6):
-        yield f"data: {{\"progress\": {i * 20}}}\n\n"
-        await asyncio.sleep(1)
-    yield f"data: {{\"status\": \"complete\"}}\n\n"
+@router.get("/log-stream")
+async def log_stream():
+    async def event_generator():
+        redis = await Redis.from_url("redis://localhost", decode_responses=True)
 
-@router.get("/stream")
-async def stream(request: Request):
+        pubsub = redis.pubsub()
+        await pubsub.subscribe("log_channel")
+
+        try:
+            while True:
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if message and message['type'] == 'message':
+                    yield f"data: {message['data']}\n\n"
+                await asyncio.sleep(0.1)
+        finally:
+            await pubsub.unsubscribe("log_channel")
+            await pubsub.close()
+
     return StreamingResponse(event_generator(), media_type="text/event-stream")

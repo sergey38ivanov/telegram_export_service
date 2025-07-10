@@ -20,37 +20,26 @@ document.addEventListener("DOMContentLoaded", () => {
   let totalChats = 1;
   let chatsProcessed = 0;
 
-  const progress = {
-    contactsSaved: false,
-    chatsProcessed: 0,
-    summarySaved: false,
-  };
+  let eventSource = null
 
-  function updateProgress() {
-    let percent = 0;
-
-    if (progress.contactsSaved) {
-      percent += 5;
+  startLogStream()
+  function startLogStream() {
+    if (eventSource) {
+      eventSource.close();
     }
 
-    percent += (progress.chatsProcessed / totalChats) * 90;
+    eventSource = new EventSource("/log-stream");
+    processedChatsDisplay.textContent = `0/0`;
+    chatsProcessed = 0;
 
-    if (progress.summarySaved) {
-      percent += 5;
-    }
-
-    updateProgressBar(Math.round(percent));
-  }
-
-  let eventSource = new EventSource("/api/log-stream");
-  eventSource.onmessage = (event) => {
-      console.log(event)
+    eventSource.onmessage = (event) => {
+      // console.log(event)
       logStream.innerHTML += INFO + event.data + "\n";
       logStream.scrollTop = logStream.scrollHeight;
-      
+
       if (event.data.includes("chat(s) per last")) {
         totalChats = parseInt(event.data.split(" ")[2]);
-        processedChatsDisplay.textContent = `0/${totalChats}`
+        processedChatsDisplay.textContent = `0/${totalChats}`;
       }
 
       if (event.data.includes("☎️ Exported")) {
@@ -59,36 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (event.data.includes("💬 Processing chat:")) {
         chatsProcessed++;
-        processedChatsDisplay.textContent = `${chatsProcessed}/${totalChats}`
+        processedChatsDisplay.textContent = `${chatsProcessed}/${totalChats}`;
         const percent = 5 + (chatsProcessed * (90 / totalChats));
         updateProgressBar(Math.min(Number(percent.toFixed(1)), 95));
       }
-      
+
       if (event.data.includes("Total time")) {
-        // ⏹ Зупинити таймер
         stopTimer();
         timerInterval = null;
-        eventSource.close();
-
-        // ✅ 100% прогрес
         updateProgressBar(100);
-        eventSource = new EventSource("/api/log-stream");
-        
+        eventSource.close();
       }
-
-      // const progressMatch = event.data.match(/PROGRESS: (\d+)%/);
-      // if (progressMatch) {
-      //   const percent = Number(progressMatch[1]);
-      //   progressBar.style.width = percent + "%";
-      //   progressBar.textContent = percent + "%";
-      // }
-
-      // if (event.data.includes("Експорт завершено")) {
-      //   clearInterval(timerInterval);
-      //   eventSource.close();
-      //   eventSource = null;
-      // }
     };
+  }
+
 
   let startTime;
   let currentProgress = 0;
@@ -152,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // });
 
   startButton.addEventListener("click", async (e) => {
+    startLogStream();
     logStream.innerHTML = ""
     e.preventDefault();
     // if (eventSource) {
@@ -169,16 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-    // const formData = new FormData(form);
     const config = getFormConfig();
-
-    // for (const [key, value] of formData.entries()) {
-    //   if (value === "on") config[key] = true;
-    //   else if (value === "") config[key] = null;
-    //   else if (key === "chat_ids") config[key] = JSON.parse(`[${value}]`);
-    //   else if (!isNaN(value) && key !== "api_hash" && key !== "session_string") config[key] = Number(value);
-    //   else config[key] = value;
-    // }
 
     // localStorage.setItem("exportConfig", JSON.stringify(config));
 
@@ -207,13 +172,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const data = await response.json();
 
-    console.log(data);
     if (!response.ok) {
       logStream.innerHTML = "❌ Помилка запиту";
       clearInterval(timerInterval);
       return;
     } else {
-      logStream.innerHTML += INFO + "Запит успішно надіслано. Очікуємо на відповідь сервера...\n";
+      logStream.innerHTML += INFO_SUCCESS + "Запит успішно надіслано. Очікуємо на відповідь сервера...\n";
       if (data.status === "error") {
         logStream.innerHTML += ERROR + "Помилка: " + data.error + "\n";
         clearInterval(timerInterval);
@@ -223,75 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       // logStream.textContent += JSON.stringify(response.status, null, 2) + "\n";
       logStream.scrollTop = logStream.scrollHeight; // Прокрутка вниз
-    }
-
-    // eventSource = new EventSource("/events");
-    
-  });
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-    const config = {};
-
-    for (const [key, value] of formData.entries()) {
-      if (value === "on") config[key] = true;
-      else if (value === "") config[key] = null;
-      else if (key === "chat_ids") config[key] = JSON.parse(`${value}`);
-      // else if (key === "session_string" && value === "") config[key] = null;
-      else if (!isNaN(value) && key !== "api_hash" && key !== "session_string") config[key] = Number(value);
-      else config[key] = value;
-    }
-
-    // localStorage.setItem("exportConfig", JSON.stringify(config));
-
-    // Запуск таймера
-    seconds = 0;
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      seconds++;
-      const min = String(Math.floor(seconds / 60)).padStart(2, '0');
-      const sec = String(seconds % 60).padStart(2, '0');
-      timerDisplay.textContent = `${min}:${sec}`;
-    }, 1000);
-
-    logStream.textContent = "";
-    progressBar.style.width = "0%";
-    progressBar.textContent = "0%";
-
-    const method = document.getElementById("export-method").value;
-    const url = method === "async" ? "/api/execute-async" : "/api/execute-sync";
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config)
-    });
-
-    if (!response.ok) {
-      logStream.textContent = "❌ Помилка запиту";
-      clearInterval(timerInterval);
-      return;
-    }
-
-    eventSource = new EventSource("/events");
-    eventSource.onmessage = (event) => {
-      logStream.textContent += event.data + "\n";
-
-      const progressMatch = event.data.match(/PROGRESS: (\d+)%/);
-      if (progressMatch) {
-        const percent = Number(progressMatch[1]);
-        progressBar.style.width = percent + "%";
-        progressBar.textContent = percent + "%";
-      }
-
-      if (event.data.includes("Експорт завершено")) {
-        clearInterval(timerInterval);
-        eventSource.close();
-        eventSource = null;
-      }
-    };
+    }    
   });
 });
 
@@ -337,26 +233,5 @@ function getFormConfig() {
       config[checkbox.name] = false;
     }
   });
-  console.log("Form config:", config);
   return config;
 }
-
-// document.getElementById("config-form").onsubmit = async (e) => {
-//   e.preventDefault();
-//   const session_string = e.target.session_string.value;
-//   await fetch("/api/config", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ session_string: session_string })
-//   });
-
-//   const evtSource = new EventSource("/stream");
-//   const log = document.getElementById("progress-log");
-//   evtSource.onmessage = function(event) {
-//     const data = JSON.parse(event.data);
-//     log.textContent += JSON.stringify(data) + "\n";
-//     if (data.status === "complete") {
-//       evtSource.close();
-//     }
-//   };
-// };

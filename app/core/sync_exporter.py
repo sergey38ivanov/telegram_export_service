@@ -20,62 +20,6 @@ from app.core.state import CURRENT_CONFIG, ExportConfig
 from app.core.utils import sse_log
 
 
-# API_ID = CURRENT_CONFIG.api_id
-# API_HASH = CURRENT_CONFIG.api_hash
-# MEDIA_EXPORT = {
-#     'audios': CURRENT_CONFIG.media_export_audios,
-#     'videos': CURRENT_CONFIG.media_export_videos,
-#     'photos': CURRENT_CONFIG.media_export_photos,
-#     'stickers': CURRENT_CONFIG.media_export_stickers,
-#     'animations': CURRENT_CONFIG.media_export_animations,
-#     'documents': CURRENT_CONFIG.media_export_documents,
-#     'voice_messages': CURRENT_CONFIG.media_export_voice_messages,
-#     'video_messages': CURRENT_CONFIG.media_export_video_messages,
-#     'contacts': CURRENT_CONFIG.media_export_contacts
-# }
-# CHAT_EXPORT = {
-#     'contacts': CURRENT_CONFIG.chat_export_contacts,
-#     'bot_chats': CURRENT_CONFIG.chat_export_bot_chats,
-#     'personal_chats': CURRENT_CONFIG.chat_export_personal_chats,
-#     'public_channels': CURRENT_CONFIG.chat_export_public_channels,
-#     'public_groups': CURRENT_CONFIG.chat_export_public_groups,
-#     'private_channels': CURRENT_CONFIG.chat_export_private_channels,
-#     'private_groups': CURRENT_CONFIG.chat_export_private_groups
-# }
-# CHAT_IDS = CURRENT_CONFIG.chat_ids
-# FILE_NOT_FOUND = '(File not included. Change data exporting settings to download.)'
-# JSON_FILE_PAGE_SIZE = CURRENT_CONFIG.json_file_page_size
-# EXPORT_DATE_RANGE = CURRENT_CONFIG.export_date_range
-# EXPORT_FROM_DATE = CURRENT_CONFIG.from_date
-# EXPORT_TO_DATE = CURRENT_CONFIG.to_date
-# SESSION_STRING = CURRENT_CONFIG.session_string
-
-# now = datetime.now()
-# range_type = EXPORT_DATE_RANGE.lower()
-
-# if range_type == "week":
-#     from_date = now - timedelta(weeks=1)
-#     to_date = now
-# elif range_type == "month":
-#     from_date = now - timedelta(weeks=4)
-#     to_date = now
-# elif range_type == "year":
-#     from_date = now - timedelta(days=365)
-#     to_date = now
-# elif range_type == "custom":
-#     from_date = datetime.strptime(EXPORT_FROM_DATE, "%Y-%m-%d")
-#     to_date = datetime.strptime(EXPORT_TO_DATE, "%Y-%m-%d") if EXPORT_TO_DATE else now
-# elif range_type == "limited":
-#     LIMIT = 10000
-#     from_date = datetime.strptime("2013-08-14", "%Y-%m-%d")  # 2013-08-14
-#     to_date = datetime.now()
-# else:
-#     from_date = datetime.strptime("2013-08-14", "%Y-%m-%d")  # 2013-08-14
-#     to_date = datetime.now()
-
-# print(f"Export  range: {range_type}")
-# print(f"Export date range: {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}")
-
 class Archive:
     def __init__(self, chat_ids: list = [], root_dir: str = ''):
         self.chat_ids = chat_ids
@@ -220,9 +164,7 @@ class Archive:
                 msg_info['width'] = message.animation.width
         elif message.photo is not None:
             # if MEDIA_EXPORT['photos'] is True:
-            print("PHOTO")
             if CURRENT_CONFIG.media_export_photos is True:
-                print("PHOTO TRUE")
                 self.photo_num += 1
                 names = get_photo_name(
                     message,
@@ -464,23 +406,17 @@ async def get_photo_data(
     msg_info: dict,
     names: tuple
 ):
-    print("GET PHOTO DATA")
-    
     photo_path, photo_relative_path = names
-    print(photo_path)
-    print(photo_relative_path)
-    # try:
-    if True:
+    try:
         result_path = await client_app.download_media(
             message.photo.file_id,
             photo_path
         )
         msg_info['photo'] = photo_relative_path
 
-        print(result_path)
-    # except ValueError:
-    #     print("Oops can't download media!")
-    #     msg_info['photo'] = FILE_NOT_FOUND
+    except ValueError:
+        print("Oops can't download media!")
+        msg_info['photo'] = FILE_NOT_FOUND
 
     msg_info['width'] = message.photo.width
     msg_info['height'] = message.photo.height
@@ -750,7 +686,6 @@ def get_photo_name(
     path: str = '',
     media_num: int = None
 ) -> tuple:
-    print("GET PHOTO")
     chat_export_date = datetime.now().strftime("%Y-%m-%d")
     chat_export_name = f'ChatExport_{user_id}_{username}_{chat_export_date}'
     # # TODO: when user want other path
@@ -1368,7 +1303,7 @@ def export_task(config: ExportConfig):
 
         client_app.run(main(config))
 
-def run_export_in_process(config: ExportConfig):
+def run_sync_export_in_process(config: ExportConfig):
     
     process = Process(target=export_task, args=(config,))
     process.start()
