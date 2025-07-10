@@ -1,0 +1,295 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="uk" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Telegram Export</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script defer src="/static/main.js"></script>
+  <style>
+    #progress-bar {
+      width: 100%;
+      background-color: #333;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #progress-bar-inner {
+      width: 0%;
+      height: 20px;
+      background-color: #28a745;
+      text-align: center;
+      color: white;
+    }
+    label.form-label {
+      display: block;
+    }
+    #log-stream {
+      max-height: 480px;
+      height: 480px;
+      overflow-y: auto;
+      text-wrap: wrap;
+      margin: 0;
+      scroll-behavior: smooth;
+    }
+    .default-star {
+      color: #ffc107; /* жовта зірочка (Bootstrap warning) */
+      margin-left: 4px;
+      font-weight: bold;
+      cursor: help;
+    }
+    .required-star {
+      color: #dc3545; /* червона зірочка (Bootstrap error) */
+      margin-left: 4px;
+      font-weight: bold;
+      cursor: help;
+    }
+  </style>
+</head>
+<body class="bg-dark text-light p-4">
+  <div class="container">
+    <h1 class="mb-4">Telegram Data Export</h1>
+
+    <form id="export-form" class="mb-1">
+      <div class="row g-3">
+        <!-- Конфіг -->
+        <div class="col-lg-4">
+          <div class="card bg-secondary border-light">
+            <div class="card-header">Configuration Settings</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <label class="form-label">Session String:<span class="required-star" title="Required">*</span>
+                    <input class="form-control" type="text" name="session_string">
+                  </label>
+                </div>
+                <div class="col-12 mb-3">
+                  <label class="form-label">Chat IDs (list of IDs or usernames, comma-separated):
+                    <input class="form-control" type="text" name="chat_ids" value="">
+                  </label>
+                </div>
+                <div class="col-xl-4 col-md-6 mb-3">
+                  <label class="form-label">Date Range:
+                    <select class="form-select" name="export_date_range">
+                      <option value="week">Week</option>
+                      <option value="month">Month</option>
+                      <option value="year">Year</option>
+                      <option value="all">All</option>
+                      <option value="custom">Custom</option>
+                      <option value="limited">Limited by count</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="col-xl-4 col-md-6 mb-3">
+                  <label class="form-label">From:
+                    <input class="form-control" type="date" name="from_date" value="2013-08-14">
+                  </label>
+                </div>
+                <div class="col-xl-4 col-md-6 mb-3">
+                  <label class="form-label">To:
+                    <input class="form-control" type="date" name="to_date" value="2025-06-10">
+                  </label>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Messages limit:
+                    <input class="form-control" type="number" name="messages_limit" value="1000">
+                  </label>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">JSON file page size:
+                    <input class="form-control" type="number" name="json_file_page_size">
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media export -->
+        <div class="col-lg-4">
+          <div class="card bg-secondary border-light mb-3">
+            <div class="card-header">Media export</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_photos" checked>
+                  <label class="form-check-label">Photos<span class="default-star" title="Default">*</span></label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_documents" checked>
+                  <label class="form-check-label">Documents<span class="default-star" title="Default">*</span></label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_videos">
+                  <label class="form-check-label">Videos</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_voice_messages">
+                  <label class="form-check-label">Voice Msgs</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_video_messages">
+                  <label class="form-check-label">Video Msgs</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_audios">
+                  <label class="form-check-label">Audios</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_stickers">
+                  <label class="form-check-label">Stickers</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_animations">
+                  <label class="form-check-label">Animations</label>
+                </div>
+                <div class="col-4 form-check">
+                  <input class="form-check-input" type="checkbox" name="media_export_contacts">
+                  <label class="form-check-label">Contacts</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat export -->
+          <div class="card bg-secondary border-light mb-3">
+            <div class="card-header">Chat export</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" name="chat_export_contacts" checked>
+                  <label class="form-check-label">Contacts<span class="default-star" title="Default">*</span></label>
+                </div>
+                <hr class="bg-light">
+              
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_bot_chats" checked>
+                  <label class="form-check-label">Bot chats<span class="default-star" title="Default">*</span></label>
+                </div>
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_personal_chats" checked>
+                  <label class="form-check-label">Personal<span class="default-star" title="Default">*</span></label>
+                </div>
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_public_channels">
+                  <label class="form-check-label">Public channels</label>
+                </div>
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_public_groups">
+                  <label class="form-check-label">Public groups</label>
+                </div>
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_private_channels" checked>
+                  <label class="form-check-label">Private channels<span class="default-star" title="Default">*</span></label>
+                </div>
+                <div class="col-6 form-check">
+                  <input class="form-check-input" type="checkbox" name="chat_export_private_groups" checked>
+                  <label class="form-check-label">Private groups<span class="default-star" title="Default">*</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Export method -->
+          <div class="card bg-secondary border-light">
+            <div class="card-header">Export Method</div>
+            <div class="card-body">
+              <label class="form-label">Choose a method:
+                <select class="form-select" id="export-method">
+                  <option value="sync">Synchronous</option>
+                  <option value="async">Asynchronous</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SSE logging -->
+        <div class="col-lg-4">
+          <div class="card bg-secondary border-light">
+            <div class="card-header">Process log</div>
+            <div class="card-body" style="padding: 5px; ">
+              <pre id="log-stream" class="bg-dark text-light border border-secondary">
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information
+<span class="text-success">[INFO]</span> Process started
+<span class="text-warning">[WARNING]</span> This is a warning message
+<span class="text-danger">[ERROR]</span> An error occurred
+<span class="text-primary">[DEBUG]</span> Debugging information
+<span class="text-secondary">[STATUS]</span> Current status update
+<span class="text-muted">[NOTE]</span> Just a note
+<span class="text-info">[INFO]</span> Additional information Additional information Additional information
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="d-flex mt-1 mb-3">
+        <button class="btn btn-success me-2" type="button" id="start-button">Start</button>
+        <!-- <button class="btn btn-danger" type="button" id="stop-button">Stop</button> -->
+      </div>
+    </form>
+
+    <div class="mb-3"><strong>Execution Time:</strong> <span id="timer">00:00</span> <span style="display:inline-block; width: 20px"></span> <strong>Processed chats:</strong> <span id="processed_chats">0/0</span></div>
+    <div id="progress-bar" class="mb-2"><div id="progress-bar-inner">0%</div></div>
+  </div>
+
+  <script>
+    const logStream = document.getElementById('log-stream');
+
+    const observer = new MutationObserver(() => {
+      logStream.scrollTop = logStream.scrollHeight;
+    });
+
+    observer.observe(logStream, { childList: true, subtree: true });
+  </script>
+</body>
+</html>

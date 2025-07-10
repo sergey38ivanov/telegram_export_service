@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+env/
+ENV/
+venv/
+# .env
+
+# VS Code / IDE config
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python tools
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test/coverage tools
+htmlcov/
+.tox/
+.nox/
+coverage.*
+.cache
+.pytest_cache/
+*.cover
+*.py,cover
+
+# Exported data
+exports/
+*.json
+data/
+*.session
+*session_string.txt
+
+# Uvicorn reload artifacts
+*.pid
+*.db
+
+# Compiled JS/CSS from templates/static (if built)
+app/ui/static/build/
