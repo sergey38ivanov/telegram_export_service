@@ -1,37 +1,58 @@
 from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
 from app.core.state import CURRENT_CONFIG
 from app.core.utils import assign_attributes_from_dict
 from app.core.sync_exporter import run_sync_export_in_process
 import asyncio
+from sqlalchemy.orm import Session
+from app.db.models import ExportRecord
+from app.db.database import SessionLocal
+from app.core.teletopyrostring import tele_to_pyro
 
 router = APIRouter(prefix="/api", tags=["execution"])
 
-async def perform_export_task(mode: str):
-    print(f"[{mode.upper()}] ➤ Початок виконання...")
-    for i in range(5):
-        await asyncio.sleep(1)
-        print(f"[{mode.upper()}] Крок {i+1}/5 виконано")
-    print(f"[{mode.upper()}] ✔ Завершено")
 
 @router.post("/execute-async")
 async def execute_async(request: Request):
-    print("Запит на асинхронний експорт отримано")
+    print("Asynchronous export request received")
     if not CURRENT_CONFIG:
-        return {"error": "Немає конфігурації", "status": "error"}
+        return {"error": "No configuration", "status": "error"}
     data = await request.json()
     print("Параметри запиту:", data)
     assign_attributes_from_dict(CURRENT_CONFIG, data)
-    return {"status": "Асинхронний експорт запущено"}
+    return {"status": "Asynchronous export started"}
 
 
 @router.post("/execute-sync")
 async def execute_sync(request: Request, background_tasks: BackgroundTasks):
-    if not CURRENT_CONFIG:
-        return {"error": "Немає конфігурації", "status": "error"}
-    print("Запит на синхронний експорт отримано")
-    data = await request.json()
-    print("Параметри запиту:", data)
-    assign_attributes_from_dict(CURRENT_CONFIG, data)
-    run_sync_export_in_process(CURRENT_CONFIG)
-    return {"status": "Синхронний експорт запущено"}
+    try:
+        print("Synchronous export request received")
+        data = await request.json()
+        print("Параметри запиту:", data)
+        
+        if not CURRENT_CONFIG or not data:
+            return {"error": "No configuration", "status": "error"}
+        if "session_string" not in data:
+            return {"error": "Missing 'Session String'", "status": "error"}
+        elif data["session_string"] == "":
+            return {"error": "Missing 'Session String'", "status": "error"}
+        data["session_string"] = await tele_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
+        assign_attributes_from_dict(CURRENT_CONFIG, data)
+        run_sync_export_in_process(CURRENT_CONFIG)
+        export_id = get_last_entry_id(SessionLocal()) + 1
+        return {"status": "Synchronous export started", "export_id": export_id}
+
+    except Exception as e:
+        print(f"[ERROR] Помилка в execute-sync: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "error": str(e),
+            }
+        )
+
+def get_last_entry_id(db: Session) -> int:
+    last_entry = db.query(ExportRecord).order_by(ExportRecord.id.desc()).first()
+    return last_entry.id if last_entry else 0
 

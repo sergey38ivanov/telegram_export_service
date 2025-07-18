@@ -13,7 +13,11 @@ def assign_attributes_from_dict(obj: BaseModel, data: dict):
             if key == "chat_ids" and value is None:
                 setattr(obj, key, [])
                 continue
-            setattr(obj, key, value)
+            # if key == "session_string" and value
+            try:
+                setattr(obj, key, value)
+            except Exception as e:
+                print(f"❌ Не вдалося призначити {key}: {e}")
         else:
             print(f"⚠️ Поле '{key}' не визначене у {obj.__class__.__name__}, пропущено.")
 
@@ -28,3 +32,12 @@ CHANNEL = "log_channel"
 
 def sse_log(message: str):
     redis_client.publish(CHANNEL, message)
+
+# -------------------------------------------------------------------------------------------
+
+from datetime import datetime
+
+def generate_directory_name(phone: str, name: str, export_date: datetime) -> str:
+    timestamp = export_date.strftime("%d%m%Y%H%M%S")
+    return f"{phone}__{name}_{timestamp}"
+

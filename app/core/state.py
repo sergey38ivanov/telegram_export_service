@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional, Literal
 from app.config import settings
 
 class ExportConfig(BaseModel):
@@ -13,7 +13,7 @@ class ExportConfig(BaseModel):
     api_hash: str = settings.API_HASH
 
     chat_ids: List[str] = settings.CHAT_IDS or []
-    export_date_range: str = settings.EXPORT_DATE_RANGE
+    export_date_range: Literal["week", "month", "year", "custom", "limited", "all"] = settings.EXPORT_DATE_RANGE
     from_date: Optional[str] = settings.EXPORT_FROM_DATE
     to_date: Optional[str] = settings.EXPORT_TO_DATE
     messages_limit: int = settings.MESSAGES_LIMIT
@@ -40,6 +40,12 @@ class ExportConfig(BaseModel):
 
     base_dir: str = settings.BASE_DIR
     session_name: str = "new_session"
+
+    @validator("chat_ids", pre=True)
+    def ensure_chat_ids_are_ints(cls, v):
+        if isinstance(v, list):
+            return [int(i) for i in v if i]
+        return []
 
 # CURRENT_CONFIG: Optional[ExportConfig] = None
 CURRENT_CONFIG: Optional[ExportConfig] = ExportConfig()

@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const DEBUG = '<span class="text-primary">[DEBUG]</span> '
   const STATUS = '<span class="text-secondary">[STATUS]</span> '
   const NOTE = '<span class="text-muted">[NOTE]</span> '
+  
+  const defaultConfig = getFormConfig();
 
   let timerInterval;
   let seconds = 0;
@@ -23,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let eventSource = null
 
   startLogStream()
+
   function startLogStream() {
     if (eventSource) {
       eventSource.close();
@@ -143,8 +146,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-    const config = getFormConfig();
-
+    const currentConfig = getFormConfig();
+    const config = diffConfig(currentConfig, defaultConfig);
+    console.log(config)
     // localStorage.setItem("exportConfig", JSON.stringify(config));
 
     // Запуск таймера
@@ -222,7 +226,9 @@ function getFormConfig() {
 
     // Все інше — як рядок
     else {
-      config[key] = value;
+      if (value.trim()) {
+        config[key] = value.trim();
+      }
     }
   }
 
@@ -234,4 +240,22 @@ function getFormConfig() {
     }
   });
   return config;
+}
+
+function diffConfig(current, base) {
+  const diff = {};
+
+  for (const key in current) {
+    if (typeof current[key] === "object" && current[key] !== null) {
+      if (JSON.stringify(current[key]) !== JSON.stringify(base[key])) {
+        diff[key] = current[key];
+      }
+    } else {
+      if (current[key] !== base[key]) {
+        diff[key] = current[key];
+      }
+    }
+  }
+
+  return diff;
 }

@@ -17,8 +17,25 @@ from pyrogram.types import User
 
 from app.core.chats import Chat
 from app.core.state import CURRENT_CONFIG, ExportConfig
-from app.core.utils import sse_log
+from app.core.utils import sse_log, generate_directory_name
 
+from app.db.models import ExportRecord
+from app.db.database import SessionLocal
+
+def save_export_record(phone, name):
+    db = SessionLocal()
+    export_date = datetime.now()
+    directory_name = generate_directory_name(phone, name, export_date)
+    new_record = ExportRecord(
+        phone=phone,
+        name=name,
+        export_date=export_date,
+        directory_name=directory_name
+    )
+    db.add(new_record)
+    db.commit()
+    db.close()
+    return directory_name
 
 class Archive:
     def __init__(self, chat_ids: list = [], root_dir: str = ''):
@@ -131,8 +148,7 @@ class Archive:
         # TODO: type service. actor...
 
         if message.sticker is not None:
-            # if MEDIA_EXPORT['stickers'] is True:
-            if CURRENT_CONFIG.media_export_stickers is True:    
+            if MEDIA_EXPORT['stickers'] is True:
                 names = get_sticker_name(
                     message,
                     self.username,
@@ -148,8 +164,7 @@ class Archive:
                 msg_info['width'] = message.sticker.width
                 msg_info['height'] = message.sticker.height
         elif message.animation is not None:
-            # if MEDIA_EXPORT['animations'] is True:
-            if CURRENT_CONFIG.media_export_animations is True:
+            if MEDIA_EXPORT['animations'] is True:
                 names = get_animation_name(message, self.username, chat.id, self.root_dir)
                 await get_animation_data(
                     message,
@@ -163,8 +178,7 @@ class Archive:
                 msg_info['mime_type'] = message.animation.mime_type
                 msg_info['width'] = message.animation.width
         elif message.photo is not None:
-            # if MEDIA_EXPORT['photos'] is True:
-            if CURRENT_CONFIG.media_export_photos is True:
+            if MEDIA_EXPORT['photos'] is True:
                 self.photo_num += 1
                 names = get_photo_name(
                     message,
@@ -183,8 +197,7 @@ class Archive:
                 msg_info['width'] = message.photo.width
                 msg_info['height'] = message.photo.height
         elif message.video is not None:
-            # if MEDIA_EXPORT['videos'] is True:
-            if CURRENT_CONFIG.media_export_videos is True:
+            if MEDIA_EXPORT['videos'] is True:
                 names = get_video_name(message, self.username, chat.id, self.root_dir)
                 await get_video_data(message, msg_info, names)
             else:
@@ -195,8 +208,7 @@ class Archive:
                 msg_info['duration_seconds'] = message.video.duration
                 msg_info['width'] = message.video.width
         elif message.video_note is not None:
-            # if MEDIA_EXPORT['video_messages'] is True:
-            if CURRENT_CONFIG.media_export_video_messages is True:
+            if MEDIA_EXPORT['video_messages'] is True:
                 self.video_message_num += 1
                 names = get_video_note_name(
                     message,
@@ -217,8 +229,7 @@ class Archive:
                 msg_info['mime_type'] = message.video_note.mime_type
                 msg_info['duration_seconds'] = message.video_note.duration
         elif message.audio is not None:
-            # if MEDIA_EXPORT['audios'] is True:
-            if CURRENT_CONFIG.media_export_audios is True:
+            if MEDIA_EXPORT['audios'] is True:
                 names = get_audio_name(message, self.username, chat.id, self.root_dir)
                 await get_audio_data(message, msg_info, names)
             else:
@@ -229,8 +240,7 @@ class Archive:
                 msg_info['title'] = message.audio.title
                 msg_info['mime_type'] = message.audio.mime_type
         elif message.voice is not None:
-            # if MEDIA_EXPORT['voice_messages'] is True:
-            if CURRENT_CONFIG.media_export_voice_messages is True:
+            if MEDIA_EXPORT['voice_messages'] is True:
                 self.voice_num += 1
                 names = get_voice_name(
                     message,
@@ -247,8 +257,7 @@ class Archive:
             else:
                 msg_info['file'] = FILE_NOT_FOUND
         elif message.document is not None:
-            # if MEDIA_EXPORT['documents'] is True:
-            if CURRENT_CONFIG.media_export_documents is True:
+            if MEDIA_EXPORT['documents'] is True:
                 names = get_document_name(message, self.username, chat.id, self.root_dir)
                 await get_document_data(
                     message,
@@ -303,6 +312,7 @@ class Archive:
             if stat is None:
                 stat = {
                     "chat_name": chat.first_name or '',
+                    "username": chat.username or '',
                     "user_id": chat.id,
                     "avatar": self.avatar_path,
                     "last_activity": self.last_activity,
@@ -312,7 +322,9 @@ class Archive:
                     "audios": 0,
                     "documents": 0,
                     "voice_messages": 0,
-                    "video_messages": 0
+                    "video_messages": 0,
+                    "directory": f"ChatExport_{chat.id}_{chat.username}_{datetime.now().strftime('%Y-%m-%d')}",
+                    "chat_type": chat.type.name.lower()
                 }
                 self.personal_chat_stats.append(stat)
             stat['message_count'] += 1
@@ -534,6 +546,7 @@ async def get_voice_data(
     names: tuple
 ) -> None:
     voice_path, voice_relative_path = names
+    print("VOICE DATA")
     try:
         await client_app.download_media(
             message.voice.file_id,
@@ -659,8 +672,7 @@ def get_contact_data(
     contact_data['last_name'] =  message.contact.last_name if message.contact.last_name is not None else ''
     msg_info['contact_information'] = contact_data
 
-    # if MEDIA_EXPORT['contacts'] is True:
-    if CURRENT_CONFIG.chat_export_contacts is True:
+    if MEDIA_EXPORT['contacts'] is True:
         vcard_path, vcard_relative_path = names
         msg_info['contact_vcard'] = vcard_relative_path
 
@@ -1055,9 +1067,11 @@ async def main(config: ExportConfig):
         phone = me.phone_number
         name = me.first_name if me.first_name else ' ' + (me.last_name if me.last_name else '')
         sse_log(f"📱 +{phone} 🚪 {name}")
-        ROOT_DIR = str(CURRENT_CONFIG.base_dir / "data" / (phone + name))
+        directory_name = save_export_record(phone=phone, name=name)
+        ROOT_DIR = str(CURRENT_CONFIG.base_dir / "data" / directory_name)
 
-        contacts = await export_contacts(client_app, ROOT_DIR, photo = False)
+        if config.chat_export_contacts:
+            contacts = await export_contacts(client_app, ROOT_DIR, photo = False)
 
         # if not CHAT_IDS:
         if not CURRENT_CONFIG.chat_ids:
@@ -1235,16 +1249,16 @@ def export_task(config: ExportConfig):
             'video_messages': config.media_export_video_messages,
             'contacts': config.media_export_contacts
         }
-        global CHAT_EXPORT
-        CHAT_EXPORT = {
-            'contacts': config.chat_export_contacts,
-            'bot_chats': config.chat_export_bot_chats,
-            'personal_chats': config.chat_export_personal_chats,
-            'public_channels': config.chat_export_public_channels,
-            'public_groups': config.chat_export_public_groups,
-            'private_channels': config.chat_export_private_channels,
-            'private_groups': config.chat_export_private_groups
-        }
+        # global CHAT_EXPORT
+        # CHAT_EXPORT = {
+        #     'contacts': config.chat_export_contacts,
+        #     'bot_chats': config.chat_export_bot_chats,
+        #     'personal_chats': config.chat_export_personal_chats,
+        #     'public_channels': config.chat_export_public_channels,
+        #     'public_groups': config.chat_export_public_groups,
+        #     'private_channels': config.chat_export_private_channels,
+        #     'private_groups': config.chat_export_private_groups
+        # }
         global CHAT_IDS
         CHAT_IDS = config.chat_ids
         global FILE_NOT_FOUND
@@ -1298,7 +1312,11 @@ def export_task(config: ExportConfig):
             # name=config.session_name,
             api_id=API_ID,
             api_hash=API_HASH,
-            session_string=config.session_string
+            session_string=config.session_string,
+            device_model='iPhone 15 Pro',
+            system_version='iOS 17.5.1',
+            app_version='Telegram iOS 10.8',
+            lang_code='en'
         )
 
         client_app.run(main(config))

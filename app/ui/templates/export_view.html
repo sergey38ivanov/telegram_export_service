@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Telegram Export Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      font-size: 12px;
+    }
+
+    .panel {
+      padding: 10px;
+      overflow-y: auto;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #2c2c2c;
+      border-right: 1px solid #444;
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background-color: #2a2a2a;
+      border-bottom: 1px solid #444;
+    }
+
+    .section {
+      padding: 10px;
+      border-bottom: 1px solid #444;
+    }
+
+    .details {
+      width: 370px;
+      background-color: #2c2c2c;
+      border-left: 1px solid #444;
+    }
+
+    .collapsed {
+      width: 20px !important;
+      overflow: hidden;
+    }
+
+    .toggle-btn {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+    }
+
+    .toggle-btn:hover {
+      background-color: #666;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+    }
+
+    table, th, td {
+      border: 1px solid #444;
+    }
+
+    th, td {
+      padding: 5px;
+      text-align: left;
+    }
+
+    .hidden {
+      display: none;
+    }
+    #folder-list{
+      padding-inline-start: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    #folder-list li{
+        cursor: pointer;
+        list-style: none;
+    }
+    #folder-list li:hover{
+        text-decoration: underline;
+    }
+    #statistics span{
+      font-weight: bold;
+    }
+    /* -------------------------------- */
+    #chatPhoto{
+      max-width: 50%;
+      height: auto;
+      margin-right: 5px;
+    }
+    #chatPhoto img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    #chat-details {
+      display: flex;
+    }
+    #chat-details p{
+      margin: 3px 0;
+    }
+    /* ------------------------------------- */
+    #contacts-list ul{
+      padding-left: 10px;
+      overflow-y: auto;
+      max-height: 250px;
+    }
+    #contacts-list li, #contacts li {
+      list-style: none;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+    }
+    #contacts-list li .photo, #contacts li .photo,
+    #contacts td .photo, #chat-table td .photo {
+      display: inline-block;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      background-color: #444;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    #contacts th{
+      text-align: center;
+    }
+    #contacts td:nth-child(1), #chat-table td:nth-child(1) {
+      width: 40px;
+      max-width: 40px;
+      min-width: 40px;
+    }
+    #contacts td .photo, #chat-table td .photo {
+      margin: 0px !important;
+    }
+    #contacts td .username a, #contacts-list li .username a {
+      text-decoration: none;
+      color: #fff !important;
+      font-style: italic;
+    }
+    .profile-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    #contacts-list li .name, #contacts li .name {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    #contacts-list li .phone, #contacts-list li .user-id,
+    #contacts-list li .username, #contacts-list li .name{
+      display: inline-block;
+    }
+    #contacts li .phone, #contacts li .user-id,
+    #contacts li .username, #contacts li .name{
+      display: inline-block;
+      margin-right: 10px;
+    }
+    #contacts-list li .phone::before, #contacts td .phone::before {
+      content: "📞";
+    }
+    #contacts-list li .user-id::before, #contacts td .user-id::before {
+      content: "🆔";
+    }
+    #contacts-list li .username::before, #contacts td .username::before  {
+      content: "👤";
+    }
+    #contacts-list li>span:nth-child(2), #contacts-list li>span:nth-child(3){
+      width: 45%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #contacts.section, #chat-table.section {
+      overflow-y: auto;
+      max-height: 300px !important;
+    }
+    #chat-table td{
+      cursor: pointer;
+    }
+    /* ---------------------------- */
+    #chat-list.section{
+      padding-right: 0px !important;
+    }
+    #chat-list ul{
+      padding-left: 0px;
+      overflow-y: auto;
+      max-height: 270px;
+    }
+    #chat-list li {
+      list-style: none;
+      margin-bottom: 5px;
+      margin-right: 5px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    #chat-list li:hover {
+      background-color: #000;
+    }
+    #chat-list li .photo {
+      display: inline-block;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      background-color: #444;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    #chat-list li .profile-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    #chat-list li .name {
+      font-weight: bold;
+      display: inline-block;
+      max-width: 100px;
+    }
+    #chat-list li .last-message {
+      color: #888;
+      font-size: 0.8em;
+    }
+    #chat-list li .message-count {
+      color: #bbb;
+      font-size: 0.9em;
+      display: inline-block;
+    }
+    #chat-list li>span:nth-child(2) {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    #chat-list li>span>span {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+
+    }
+    .short-chat-details{
+      color: #888;
+      font-size: 0.8em;
+      display: inline-block;
+    }
+    /* ---------------------------------- */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .message {
+      max-width: 60%;
+      padding: 10px 14px;
+      margin: 8px;
+      border-radius: 12px;
+      line-height: 1.4;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .message.incoming {
+      background-color: #2a2f38;
+      color: white;
+      align-self: flex-start;
+      border-top-left-radius: 0;
+    }
+
+    .message.outgoing {
+      background-color: #007aff;
+      color: white;
+      align-self: flex-end;
+      border-top-right-radius: 0;
+    }
+
+    .message .timestamp {
+      display: block;
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 4px;
+      text-align: right;
+    }
+    /* ---------------------------------- */
+    .userpic1 {
+        background-color: #ff5555 !important;
+    }
+    .userpic2 {
+        background-color: #64bf47 !important;
+    }
+    .userpic3 {
+        background-color: #ffab00 !important;
+    }
+    .userpic4 {
+        background-color: #4f9cd9 !important;
+    }
+    .userpic5 {
+        background-color: #9884e8 !important;
+    }
+    .userpic6 {
+        background-color: #e671a5 !important;
+    }
+    .userpic7 {
+        background-color: #47bcd1 !important;
+    }
+    .userpic8 {
+        background-color: #ff8c44 !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar with directories -->
+  <div id="sidebar" class="panel sidebar">
+    <button onclick="togglePanel('sidebar')" class="toggle-btn"><<</button>
+    <div class="hide-block">
+      <!-- Перелік завантажених каталогів -->
+      <div class="section">
+        <h3>📁 Каталоги завантажень</h3>
+        <ul id="folder-list" data-folder="{{selected_folder}}">
+            {% for folder in folders %}
+            <li onclick="selectFolder('{{folder}}')">📁 {{folder}}</li>
+            {% endfor %}
+        </ul>
+      </div>
+      <!-- Загальна статистика вивантаженої сесії -->
+      <div id="statistics" class="section">
+        <h3>📊 Загальна статистика</h3>
+        <p>Total contacts: <span id="totalContacts">0</span></p>
+        <p>Personal chats: <span id="personalChats">0</span></p>
+        <p>Public groups: <span id="publicGroups">0</span></p>
+        <p>Public channels: <span id="publicChannels">0</span></p>
+        <p>Private groups: <span id="privateGroups">0</span></p>
+        <p>Private channels: <span id="privateCchannels">0</span></p>
+      </div>
+      <!-- Список чатів -->
+      <div id="chat-list" class="section">
+        <h3>💬 Чати</h3>
+        <ul></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content panel" id="content">
+    <div class="toolbar">
+      <h2>Telegram Export</h2>
+      <div>
+        <button onclick="toggleContacts()">👁 Контакти</button>
+        <button onclick="toggleChats()">💬 Чати</button>
+      </div>
+    </div>
+
+    <div id="contacts" class="section">
+      <h3>👥 Контакти</h3>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Username</th>
+            <th>User ID</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="chat-table" class="section">
+      <h3>💬 Чати</h3>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Назва</th>
+            <th>ID</th>
+            <th>Тип</th>
+            <th>Остання активність в чаті</th>
+            <th>Вміст чату</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="chat-messages" class="section">
+      <h3>📜 Повідомлення чату</h3>
+      <div id="messages-container" class="chat-container">
+        <!-- Повідомлення будуть завантажені тут -->
+      </div>
+      <div id="loading" style="display: none;">Завантаження повідомлень...</div>
+      <div id="no-messages" style="display: none;">Немає повідомлень для цього чату.</div>
+
+    </div>
+  </div>
+
+  <!-- Right panel with chat details -->
+  <div id="details" class="panel details">
+    <button onclick="togglePanel('details')" class="toggle-btn">>></button>
+    <div class="hide-block">
+      <!-- Деталі обраного чату -->
+      <div class="section">
+        <h3>📄 Деталі чату</h3>
+        <div id="chat-details">
+          <div id="chatPhoto">
+            <img id="chatAvatar" src="static/images/default-avatar.png" />
+          </div>
+          <div>
+            <p><b>ID:</b> <span id="chatId">0</span></p>
+            <p><b>Назва:</b> <span id="chatName">-</span></p>
+            <p><b>Юзернейм:</b> <span id="chatUsername">-</span></p>
+            <p><b>Телефон:</b> <span id="chatPhone">-</span></p>
+            <p><b>Тип:</b> <span id="chatType">-</span></p>
+            <p><b>Останнє повідомлення:</b> <span id="chatDate">-</span></p>
+            <p><b>Повідомлень:</b> <span id="chatSize">0</span></p>
+            <h4>Медіавміст чату:</h4>
+            <p><b>Фото:</b> <span id="chatPhotos">0</span></p>
+            <p><b>Документів:</b> <span id="chatDocuments">0</span></p>
+            <p><b>Відео:</b> <span id="chatVideos">0</span></p>
+            <p><b>Аудіо:</b> <span id="chatAudios">0</span></p>
+            <p><b>Відеоповідомлень:</b> <span id="chatVMessages">0</span></p>
+            <p><b>Аудіоповідомлень:</b> <span id="chatAMessages">0</span></p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Список контактів -->
+      <div id="contacts-list" class="section">
+        <h3>👥 Контакти</h3>
+        <ul>
+
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePanel(id) {
+      const panel = document.getElementById(id);
+      const hideBlock = panel.querySelector('.hide-block');
+      panel.classList.toggle("collapsed");
+      const isCollapsed = panel.classList.contains("collapsed");
+      if (isCollapsed){
+        hideBlock.style.display = "none";
+      } else {
+        setTimeout(() => {
+          hideBlock.style.display = "block";
+        }, 150);
+      }
+    }
+
+    function toggleContacts() {
+      document.getElementById("contacts").classList.toggle("hidden");
+    }
+
+    function toggleChats() {
+      document.getElementById("chat-table").classList.toggle("hidden");
+    }
+
+    function selectFolder(folderName) {
+      // alert("Вибрано каталог: " + folderName);
+    }
+
+    function selectChat(chatId) {
+      alert("Вибрано чат: " + chatId);
+    }
+  </script>
+  <script src="/static/export_view.js"></script>
+</body>
+</html>
