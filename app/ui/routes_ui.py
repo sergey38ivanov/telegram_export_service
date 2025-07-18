@@ -14,7 +14,7 @@ from app.db.database import SessionLocal
 router = APIRouter()
 templates = Jinja2Templates(directory="app/ui/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/export", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
