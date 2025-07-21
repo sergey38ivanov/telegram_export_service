@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.models import ExportRecord
 from app.db.database import SessionLocal
 from app.core.teletopyrostring import tele_to_pyro
+from app.core.gramjstopyro import gramjs_to_pyro
 
 router = APIRouter(prefix="/api", tags=["execution"])
 
@@ -33,10 +34,15 @@ async def execute_sync(request: Request, background_tasks: BackgroundTasks):
         if not CURRENT_CONFIG or not data:
             return {"error": "No configuration", "status": "error"}
         if "session_string" not in data:
-            return {"error": "Missing 'Session String'", "status": "error"}
-        elif data["session_string"] == "":
-            return {"error": "Missing 'Session String'", "status": "error"}
-        data["session_string"] = await tele_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
+            return {"error": "Missing 'Session data'", "status": "error"}
+        elif data["session_string"] == {}:
+            return {"error": "Missing 'Session data'", "status": "error"}
+        
+        if data["session_string"]["session_type"] == "gramjs":
+            data["session_string"] = await gramjs_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
+        elif data["session_string"]["session_type"] == "telethon":
+            data["session_string"] = await tele_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
+        
         assign_attributes_from_dict(CURRENT_CONFIG, data)
         run_sync_export_in_process(CURRENT_CONFIG)
         export_id = get_last_entry_id(SessionLocal()) + 1

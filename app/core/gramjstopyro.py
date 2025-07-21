@@ -1,13 +1,17 @@
 # Both Telethon and Pyrogram should be Installed
 
+
 import struct, base64
-from telethon.sessions.string import StringSession
+from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from pyrogram.storage.storage import Storage
+from telethon.crypto import AuthKey
 
 
-def telethon_to_unpack(string):
-    ST = StringSession(string)
+def gramjs_to_unpack(sessionData):
+    ST = StringSession("")
+    ST.set_dc(sessionData["dc_id"], sessionData["serverAddress"], sessionData["port"])
+    ST.auth_key = AuthKey(bytes.fromhex(sessionData["auth_key"]))
     return ST
 
 
@@ -22,9 +26,12 @@ def pack_to_pyro(data, ses, api_id):
     )
 
 
-async def start_session(string, api_id, api_hash):
+async def start_session(sessionData, api_id, api_hash):
+    my_session = StringSession("")
+    my_session.set_dc(sessionData["dc_id"], sessionData["serverAddress"], sessionData["port"])
+    my_session.auth_key = AuthKey(bytes.fromhex(sessionData["auth_key"]))
     async with TelegramClient(
-        StringSession(string), api_id, api_hash,
+        my_session, api_id, api_hash,
         device_model='iPhone 15 Pro',
         system_version='iOS 17.5.1',
         app_version='Telegram iOS 10.8',
@@ -35,7 +42,7 @@ async def start_session(string, api_id, api_hash):
     return ml
 
 
-async def tele_to_pyro(string, api_id, api_hash):
-    DL = telethon_to_unpack(string)
-    MK = await start_session(string, api_id, api_hash)
+async def gramjs_to_pyro(sessionData, api_id, api_hash):
+    DL = gramjs_to_unpack(sessionData)
+    MK = await start_session(sessionData, api_id, api_hash)
     return pack_to_pyro(DL, MK, api_id)
