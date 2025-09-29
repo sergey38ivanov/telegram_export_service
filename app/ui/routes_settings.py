@@ -58,7 +58,7 @@ async def add_redirect(data: dict, db: Session = Depends(get_db)):
         return JSONResponse({"status": "error", "message": "Domain not found"}, status_code=400)
 
     # full_link = f"https://{domain.domen}/{key}"
-    full_link = f"http://{domain.domen}/{key}"
+    full_link = f"{domain.domen}/{key}"
 
     redirect = RedirectLink(
         id=key,
