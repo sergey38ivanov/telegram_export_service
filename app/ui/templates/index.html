@@ -45,6 +45,11 @@
     }
   </style>
 </head>
+<div class=" mx-auto mb-4">
+    <a href="/configuration/" class="btn btn-primary">⚙️ Configuration</a>
+    <a href="/view-export" class="btn btn-info">📑 View Export</a>
+    <a href="/sessions/" class="btn btn-warning">📂 Sessions</a>
+</div>
 <body class="bg-dark text-light p-4">
   <div class="container">
     <h1 class="mb-4">Telegram Data Export</h1>
@@ -283,7 +288,7 @@
     <div class="mb-3"><strong>Execution Time:</strong> <span id="timer">00:00</span> <span style="display:inline-block; width: 20px"></span> <strong>Processed chats:</strong> <span id="processed_chats">0/0</span></div>
     <div id="progress-bar" class="mb-2"><div id="progress-bar-inner">0%</div></div>
   </div>
-  
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     const logStream = document.getElementById('log-stream');
