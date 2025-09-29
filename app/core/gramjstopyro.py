@@ -32,9 +32,9 @@ async def start_session(sessionData, api_id, api_hash):
     my_session.auth_key = AuthKey(bytes.fromhex(sessionData["auth_key"]))
     async with TelegramClient(
         my_session, api_id, api_hash,
-        device_model='iPhone 15 Pro',
-        system_version='iOS 17.5.1',
-        app_version='Telegram iOS 10.8',
+        device_model='EroticBot',
+        system_version='EroOS 6.9',
+        app_version='69.420',
         lang_code='en',
         system_lang_code='en-US'
     ) as ses:

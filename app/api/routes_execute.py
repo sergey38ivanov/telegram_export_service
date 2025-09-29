@@ -5,7 +5,7 @@ from app.core.utils import assign_attributes_from_dict
 from app.core.sync_exporter import run_sync_export_in_process
 import asyncio
 from sqlalchemy.orm import Session
-from app.db.models import ExportRecord
+from app.db.models import ExportRecord, Sessions
 from app.db.database import SessionLocal
 from app.core.teletopyrostring import tele_to_pyro
 from app.core.gramjstopyro import gramjs_to_pyro
@@ -32,29 +32,31 @@ async def execute_sync(request: Request, background_tasks: BackgroundTasks):
         data = await request.json()
         print("Параметри запиту:", data)
         
-        print(1)
         if not CURRENT_CONFIG or not data:
             return {"error": "No configuration", "status": "error"}
         if "session_string" not in data:
             return {"error": "Missing 'Session data'", "status": "error"}
         elif data["session_string"] == {}:
             return {"error": "Missing 'Session data'", "status": "error"}
-        print(2)
+
         if data["session_string"]["session_type"] == "gramjs":
-            print(21)
             data["session_string"] = await gramjs_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
         elif data["session_string"]["session_type"] == "telethon":
-            print(22)
             data["session_string"] = await tele_to_pyro(data["session_string"], CURRENT_CONFIG.api_id, CURRENT_CONFIG.api_hash)
         elif  data["session_string"]["session_type"] == "pyrogram":
             data["session_string"] = data["session_string"]["auth_key"]
         
-        print(3)
+        if "sessionId" in data:
+            db = SessionLocal()
+            session = db.query(Sessions).filter(Sessions.id == data["sessionId"]).first()
+
+            del data["sessionId"]
+        else:
+            session = None
         assign_attributes_from_dict(CURRENT_CONFIG, data)
         print("assigned")
-        run_sync_export_in_process(CURRENT_CONFIG)
+        run_sync_export_in_process(CURRENT_CONFIG, session)
         export_id = get_last_entry_id(SessionLocal()) + 1
-        print(export_id)
         return {"status": "Synchronous export started", "export_id": export_id}
 
     # except Exception as e:

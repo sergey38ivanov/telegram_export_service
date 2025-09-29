@@ -152,6 +152,11 @@ document.addEventListener("DOMContentLoaded", () => {
       "session_type": "pyrogram",
       "auth_key" : config.session_string
     }
+    let sessionId = $("#sessionID").data("id");
+    if(sessionId){
+      config.sessionId = sessionId
+    }
+    console.log(sessionId);
     console.log(config)
     // localStorage.setItem("exportConfig", JSON.stringify(config));
 
@@ -250,6 +255,10 @@ function diffConfig(current, base) {
   const diff = {};
 
   for (const key in current) {
+    if (key == "session_string") {
+      diff["session_string"] = current[key]
+      continue
+    }
     if (typeof current[key] === "object" && current[key] !== null) {
       if (JSON.stringify(current[key]) !== JSON.stringify(base[key])) {
         diff[key] = current[key];

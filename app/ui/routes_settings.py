@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends, Form, APIRouter
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal, engine
-from app.db.models import Base, TelegramChannel, RedirectLink, Domain, generate_key
+from app.db.models import Base, TelegramChannel, RedirectLink, Domain, generate_key, Sessions
 from app.config import settings
 from starlette.templating import Jinja2Templates
 
@@ -26,11 +26,14 @@ async def index(request: Request, db: Session = Depends(get_db)):
     channels = db.query(TelegramChannel).all()
     domains = db.query(Domain).all()
     redirects = db.query(RedirectLink).all()
+    sessions = db.query(Sessions).all()
+
     return templates.TemplateResponse("configurations.html", 
                                       {"request": request, 
                                        "channels": channels, 
                                        "domains": domains,
-                                       "redirects": redirects})
+                                       "redirects": redirects,
+                                       "sessions": sessions})
 
 
 @router.post("/add_channel")

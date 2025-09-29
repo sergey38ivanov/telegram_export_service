@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     MEDIA_EXPORT_STICKERS: bool = False
     MEDIA_EXPORT_ANIMATIONS: bool = False
     MEDIA_EXPORT_DOCUMENTS: bool = True
-    MEDIA_EXPORT_VOICE_MESSAGES: bool = False
+    MEDIA_EXPORT_VOICE_MESSAGES: bool = True
     MEDIA_EXPORT_VIDEO_MESSAGES: bool = False
     MEDIA_EXPORT_CONTACTS: bool = False
 

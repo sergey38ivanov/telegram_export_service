@@ -2,6 +2,8 @@ import os
 import json
 import time
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 import uuid
 from typing import Union
 import shutil
@@ -19,18 +21,19 @@ from app.core.chats import Chat
 from app.core.state import CURRENT_CONFIG, ExportConfig
 from app.core.utils import sse_log, generate_directory_name
 
-from app.db.models import ExportRecord
+from app.db.models import ExportRecord, Sessions
 from app.db.database import SessionLocal
 
-def save_export_record(phone, name):
+def save_export_record(phone, name, session):
     db = SessionLocal()
     export_date = datetime.now()
     directory_name = generate_directory_name(phone, name, export_date)
     new_record = ExportRecord(
         phone=phone,
         name=name,
-        export_date=export_date,
-        directory_name=directory_name
+        export_date=datetime.now(ZoneInfo("Europe/Kyiv")),
+        directory_name=directory_name,
+        session=session
     )
     db.add(new_record)
     db.commit()
@@ -1058,7 +1061,7 @@ def safe_rmtree(path, max_retries=5, delay=1):
 
 import time
 
-async def main(config: ExportConfig):
+async def main(config: ExportConfig, session=None):
 
     start_time = time.perf_counter()
     async with client_app:
@@ -1067,7 +1070,7 @@ async def main(config: ExportConfig):
         phone = me.phone_number
         name = me.first_name if me.first_name else ' ' + (me.last_name if me.last_name else '')
         sse_log(f"📱 +{phone} 🚪 {name}")
-        directory_name = save_export_record(phone=phone, name=name)
+        directory_name = save_export_record(phone=phone, name=name, session=session)
         ROOT_DIR = str(CURRENT_CONFIG.base_dir / "data" / directory_name)
 
         if config.chat_export_contacts:
@@ -1232,7 +1235,7 @@ async def main(config: ExportConfig):
 
 
 
-def export_task(config: ExportConfig):
+def export_task(config: ExportConfig, session=None):
         global API_ID
         API_ID = config.api_id
         global API_HASH
@@ -1313,15 +1316,15 @@ def export_task(config: ExportConfig):
             api_id=API_ID,
             api_hash=API_HASH,
             session_string=config.session_string,
-            device_model='iPhone 15 Pro',
-            system_version='iOS 17.5.1',
-            app_version='Telegram iOS 10.8',
-            lang_code='en'
+            device_model='EroticBot',
+            system_version='EroOS 6.9',
+            app_version='69.420',
+            lang_code='ru'
         )
 
-        client_app.run(main(config))
+        client_app.run(main(config, session))
 
-def run_sync_export_in_process(config: ExportConfig):
+def run_sync_export_in_process(config: ExportConfig, session = None):
     
-    process = Process(target=export_task, args=(config,))
+    process = Process(target=export_task, args=(config,session))
     process.start()
