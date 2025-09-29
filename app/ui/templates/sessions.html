@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sessions & Exports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; }
+        h2 { margin-top: 40px; }
+        .export-table { margin-left: 30px; width: 95%; }
+        .btn { padding: 4px 8px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-edit { background: #3498db; color: white; }
+        .btn-delete { background: #e74c3c; color: white; }
+        .btn-export { background: #198754; color: white; }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Sessions and Exports</h1>
+
+    {% for session in sessions %}
+        <h2>Session {{ session.id }}</h2>
+        <table>
+            <tr>
+                <th>Link</th><td colspan="3">{{ session.link }}</td>
+                <th>Phone</th><td>{{ session.phone or "-" }}</td>
+                <th>Status</th><td>{{ session.status }}</td>
+            </tr>
+            <tr>
+                <th>Active</th><td>{{ "✅" if session.active else "❌" }}</td>
+                <th>Alive</th><td>{{ "✅" if session.alive else "❌" }}</td>
+                <th>Password</th><td>{{ session.password or "-" }}</td>
+                <th>Date</th><td>{{ session.date or "-" }}</td>
+            </tr>
+            <tr>
+                <th>Session string</th>
+                <td colspan="7">{{ session.session_string or "-" }}</td>
+            </tr>
+            <tr>
+                <td colspan="8">
+                    <button class="btn btn-export export-session" data-id="{{ session.id }}">Export</button>
+                    <!-- <button class="btn btn-edit" onclick="window.location.href='/sessions/{{ session.id }}/edit'">Edit</button> -->
+                    <button class="btn btn-delete delete-session" data-id="{{ session.id }}">Delete</button>
+                    
+                </td>
+            </tr>
+        </table>
+
+        {% if session.exports %}
+            <h3>Export Records</h3>
+            <table class="export-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Phone</th>
+                        <th>Name</th>
+                        <th>Export Date</th>
+                        <th>Directory</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for export in session.exports %}
+                        <tr data-id="{{ export.id }}">
+                            <td>{{ export.id }}</td>
+                            <td>{{ export.phone }}</td>
+                            <td>{{ export.name or "-" }}</td>
+                            <td>{{ export.export_date }}</td>
+                            <td>{{ export.directory_name }}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="window.location.href='/exports/{{ export.id }}/edit'">Edit</button>
+                                <button class="btn btn-delete delete-export" data-id="{{ export.id }}">Delete</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p><em>No export records.</em></p>
+        {% endif %}
+    {% endfor %}
+
+<script>
+$(document).ready(function() {
+    // Видалення сесії
+    $(".delete-session").on("click", function() {
+        if (!confirm("Delete this session?")) return;
+        let id = $(this).data("id");
+        $.ajax({
+            url: "/sessions/" + id,
+            type: "DELETE",
+            success: function(res) {
+                alert(res.message);
+                location.reload();
+            },
+            error: function(err) {
+                alert("Error deleting session");
+            }
+        });
+    });
+
+    // Видалення експорту
+    $(".delete-export").on("click", function() {
+        if (!confirm("Delete this export record?")) return;
+        let id = $(this).data("id");
+        $.ajax({
+            url: "/exports/" + id,
+            type: "DELETE",
+            success: function(res) {
+                alert(res.message);
+                location.reload();
+            },
+            error: function(err) {
+                alert("Error deleting export");
+            }
+        });
+    });
+
+    // Eкспорт
+    $(".export-session").on("click", function () {
+        let id = $(this).data("id");
+        window.location.href = "/export/" + id;
+    });
+});
+</script>
+</body>
+</html>

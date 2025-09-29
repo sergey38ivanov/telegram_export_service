@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Адмін панель</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .copy-cell { cursor: pointer; }
+        .channel_photo{
+            height: 50px;
+            width: 50px;
+            background-position: center;
+            background-size: cover;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container">
+    <h2>Керування редіректами</h2>
+    <div class="row ">
+        <div class="col-6">
+            <form id="channelForm" class="mb-3">
+                <input type="text" class="form-control mb-2" name="name" placeholder="Назва каналу" required>
+                <input type="text" class="form-control mb-2" name="invite_link" placeholder="Інвайт лінк" required>
+                <input type="text" class="form-control mb-2" name="photo" placeholder="URL фото" required>
+                <button class="btn btn-success">Додати канал</button>
+            </form>
+        </div>
+        <div class="col-6">
+            <form id="domainForm" class="mb-3">
+                <input type="text" class="form-control mb-2" name="name" placeholder="Назва домену" required>
+                <input type="text" class="form-control mb-2" name="domen" placeholder="Домен (example.com)" required>
+                <button class="btn btn-primary">Додати домен</button>
+            </form>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-6">
+            <table class="table table-bordered" id="channelsTable">
+                <thead>
+                    <tr>
+                        <th>Фото</th>
+                        <th>Назва</th>
+                        <th>Інвайт лінк</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for channel in channels %}
+                    <tr style="vertical-align: middle;" data-id="{{channel.id}}" >
+                        <td style="width: 50px;">
+                            <div class="channel_photo" style="background-image: url({{channel.photo}});"></div>
+                        </td>
+                        <td>{{channel.name}}</td>
+                        <td>
+                            <a href="{{channel.invite_link}}" target="_blank" rel="noopener noreferrer">{{channel.invite_link}}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-6">
+            <table class="table table-bordered" id="domainsTable">
+                <thead>
+                    <tr>
+                        <th>Назва</th>
+                        <th>Лінк</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for domain in domains %}
+                    <tr style="vertical-align: middle;" data-id="{{domain.id}}" >
+                        <td>{{domain.name}}</td>
+                        <td>{{domain.domen}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ДОДАТИ КОНФІГУРАТОР СЕСІЙ -->
+    <hr>
+    <!-- Форма редіректу -->
+    <form id="redirectForm" class="mb-3">
+        <div class="row">
+            <div class="col-4">
+                <select class="form-select mb-2" name="redirect_id" required>
+                    {% for channel in channels %}
+                    <option value="{{ channel.id }}">{{ channel.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-4">
+                <select class="form-select mb-2" name="domain_id" required>
+                    {% for domain in domains %}
+                    <option value="{{ domain.id }}">{{ domain.domen }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-4">
+                <input type="text" class="form-control mb-2" name="phone" placeholder="Телефон">
+            </div>
+        </div>
+        
+
+        
+        <button class="btn btn-warning">Згенерувати редірект</button>
+    </form>
+
+    <!-- Таблиця редіректів -->
+    <h3>Список редіректів</h3>
+    <table class="table table-bordered" id="redirectsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Посилання</th>
+                <th>Канал</th>
+                <th>Телефон</th>
+                <th>Активний</th>
+                <th>Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for redirect in redirects %}
+            <tr data-id="{{ redirect.id }}">
+                <td>{{ redirect.id }}</td>
+                <td class="copy-cell">{{ redirect.link }}</td>
+                <td>{{ redirect.redirect.name }}</td>
+                <td>{{ redirect.phone }}</td>
+                <td>{{ redirect.active }}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm delete-btn">Видалити</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div id="result"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    async function sendForm(formId, url) {
+        const form = document.getElementById(formId);
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            const json = await res.json();
+            document.getElementById("result").innerText = JSON.stringify(json, null, 2);
+            if (url === "/configuration/add_redirect" && json.link) {
+                addRedirectRow(json);
+            }
+        });
+    }
+
+    sendForm("domainForm", "/configuration/add_domain");
+    sendForm("channelForm", "/configuration/add_channel");
+    sendForm("redirectForm", "/configuration/add_redirect");
+
+    // Копіювання в буфер при кліку на посилання
+    document.addEventListener("click", function(e) {
+        if (e.target.classList.contains("copy-cell")) {
+            const text = e.target.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Посилання скопійовано: " + text);
+            });
+        }
+    });
+
+    // Додавання нового редіректу до таблиці без перезавантаження
+    function addRedirectRow(data) {
+        const tableBody = document.querySelector("#redirectsTable tbody");
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${data.id}</td>
+            <td class="copy-cell">${data.link}</td>
+            <td>${data.channel_name || ''}</td>
+            <td>${data.phone || ''}</td>
+            <td>${data.active || false}</td>
+        `;
+        tableBody.appendChild(tr);
+    }
+
+    $(document).ready(function() {
+        console.log("Document ready");
+        $("#redirectsTable").on("click", ".delete-btn", function() {
+            let row = $(this).closest("tr");
+            let recordId = row.data("id");
+            console.log("Deleting record ID:", recordId);
+
+            // if (!confirm("Ви дійсно хочете видалити цей запис?")) return;
+
+            $.ajax({
+                url: `/configuration/redirects/${recordId}`,
+                type: "DELETE",
+                success: function(res) {
+                    row.remove(); // видаляємо рядок з таблиці
+                },
+                error: function(xhr) {
+                    let data = xhr.responseJSON;
+                    alert("Помилка видалення: " + (data?.detail || "невідома помилка"));
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

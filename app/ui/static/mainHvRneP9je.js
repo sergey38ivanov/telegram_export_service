@@ -148,6 +148,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const currentConfig = getFormConfig();
     const config = diffConfig(currentConfig, defaultConfig);
+    config.session_string =  {
+      "session_type": "pyrogram",
+      "auth_key" : config.session_string
+    }
     console.log(config)
     // localStorage.setItem("exportConfig", JSON.stringify(config));
 

@@ -9,6 +9,7 @@ from app.api.routes_config import router as config_router
 from app.api.routes_execute import router as execute_router
 from app.api.routes_stream import router as stream_router
 from app.ui.routes_ui import router as ui_router
+from app.ui.routes_settings import router as settings_router
 from app.db.database import init_db
 
 os.chdir(str(Path(__file__).resolve().parent.parent))
@@ -31,6 +32,7 @@ app.include_router(config_router)
 app.include_router(execute_router)
 app.include_router(stream_router)
 app.include_router(ui_router)
+app.include_router(settings_router)
 
 # Ініціалізація бази даних
 @app.on_event("startup")
