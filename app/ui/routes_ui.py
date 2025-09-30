@@ -37,7 +37,6 @@ templates = Jinja2Templates(directory="app/ui/templates")
 sessions_dir = settings.BASE_DIR / "app" / "db"
 
 @router.get("/export", response_class=HTMLResponse)
-@login_required
 def index(request: Request, id: Optional[str] = Query(default=None)):
     session_string = ""
     if id:
