@@ -5,14 +5,16 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.db.models import User
-from app.security import  hash_password
+from app.security import  hash_password, login_required
+
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/ui/templates")
 
 @router.get("/users", response_class=HTMLResponse)
-def users_page(request: Request, db: Session = Depends(get_db)):
+@login_required
+async def users_page(request: Request, db: Session = Depends(get_db)):
     users = db.query(User).all()
     return templates.TemplateResponse("add_user.html", {"request": request, "users": users})
 
