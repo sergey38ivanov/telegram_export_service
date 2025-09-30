@@ -7,6 +7,13 @@ import string
 
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+
 
 class TelegramChannel(Base):
     __tablename__ = "telegram_channels"

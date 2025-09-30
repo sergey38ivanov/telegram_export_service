@@ -14,6 +14,7 @@ from app.db.database import SessionLocal, get_db
 from app.core.state import CURRENT_CONFIG
 from app.core.utils import assign_attributes_from_dict
 from app.core.sync_exporter import run_sync_export_in_process
+from app.security import get_current_user, login_required
 
 from pyrogram import Client
 from redis import Redis
@@ -36,6 +37,7 @@ templates = Jinja2Templates(directory="app/ui/templates")
 sessions_dir = settings.BASE_DIR / "app" / "db"
 
 @router.get("/export", response_class=HTMLResponse)
+@login_required
 def index(request: Request, id: Optional[str] = Query(default=None)):
     session_string = ""
     if id:
@@ -52,6 +54,7 @@ def index(request: Request, id: Optional[str] = Query(default=None)):
 
 
 @router.get("/view-export")
+@login_required
 async def view_export(request: Request, id: Optional[str] = Query(default=None)):
 
     data_path = settings.BASE_DIR / "data"
@@ -344,6 +347,7 @@ async def _submit_password_async(session_name, password):
         return {'status': 'error', 'message': str(e)}
 
 @router.get("/sessions", response_class=HTMLResponse)
+@login_required
 async def sessions_page(request: Request, db: Session = Depends(get_db)):
     links = db.query(RedirectLink).all()
     sessions = db.query(Sessions).all()
