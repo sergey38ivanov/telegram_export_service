@@ -49,17 +49,23 @@
                         <th>Фото</th>
                         <th>Назва</th>
                         <th>Інвайт лінк</th>
+                        <th>Дії</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for channel in channels %}
-                    <tr style="vertical-align: middle;" data-id="{{channel.id}}" >
-                        <td style="width: 50px;">
+                    <tr style="vertical-align: middle;" data-id="{{channel.id}}">
+                        <td class="editable photo" style="width: 50px;">
                             <div class="channel_photo" style="background-image: url({{channel.photo}});"></div>
                         </td>
-                        <td>{{channel.name}}</td>
-                        <td>
+                        <td class="editable name">{{channel.name}}</td>
+                        <td class="editable link">
                             <a href="{{channel.invite_link}}" target="_blank" rel="noopener noreferrer">{{channel.invite_link}}</a>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-btn">Редагувати</button>
+                            <button class="btn btn-sm btn-success save-btn d-none">Зберегти</button>
+                            <button class="btn btn-sm btn-secondary cancel-btn d-none">Скасувати</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -94,6 +100,7 @@
         <div class="row">
             <div class="col-4">
                 <select class="form-select mb-2" name="redirect_id" required>
+                    <option value="" disabled selected>Оберіть канал...</option>
                     {% for channel in channels %}
                     <option value="{{ channel.id }}">{{ channel.name }}</option>
                     {% endfor %}
@@ -222,6 +229,61 @@
             });
         });
     });
+
+    $(document).ready(function() {
+    $("#channelsTable").on("click", ".edit-btn", function() {
+        const row = $(this).closest("tr");
+
+        // Замінюємо на input
+        row.find(".editable.photo").html('<input type="text" class="form-control" value="' + row.find(".channel_photo").css("background-image").replace(/url\(["\']?(.*?)["\']?\)/, '$1') + '">');
+        row.find(".editable.name").html('<input type="text" class="form-control" value="' + row.find(".editable.name").text().trim() + '">');
+        row.find(".editable.link").html('<input type="text" class="form-control" value="' + row.find(".editable.link a").text().trim() + '">');
+
+        row.find(".edit-btn").addClass("d-none");
+        row.find(".save-btn, .cancel-btn").removeClass("d-none");
+    });
+
+    $("#channelsTable").on("click", ".cancel-btn", function() {
+        const row = $(this).closest("tr");
+        const name = row.find("input").eq(1).val();
+        const link = row.find("input").eq(2).val();
+        const photo = row.find("input").eq(0).val();
+
+        row.find(".editable.name").text(name);
+        row.find(".editable.link").html('<a href="' + link + '" target="_blank">' + link + '</a>');
+        row.find(".editable.photo").html('<div class="channel_photo" style="background-image: url(' + photo + ');"></div>');
+
+        row.find(".edit-btn").removeClass("d-none");
+        row.find(".save-btn, .cancel-btn").addClass("d-none");
+    });
+
+    $("#channelsTable").on("click", ".save-btn", function() {
+        const row = $(this).closest("tr");
+        const id = row.data("id");
+        const photo = row.find("input").eq(0).val();
+        const name = row.find("input").eq(1).val();
+        const link = row.find("input").eq(2).val();
+
+        // Відправка на сервер через AJAX
+        $.ajax({
+            url: "/configuration/update_channel/" + id,
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ photo, name, invite_link: link }),
+            success: function() {
+                row.find(".editable.name").text(name);
+                row.find(".editable.link").html('<a href="' + link + '" target="_blank">' + link + '</a>');
+                row.find(".editable.photo").html('<div class="channel_photo" style="background-image: url(' + photo + ');"></div>');
+
+                row.find(".edit-btn").removeClass("d-none");
+                row.find(".save-btn, .cancel-btn").addClass("d-none");
+            },
+            error: function() {
+                alert("Помилка при збереженні змін");
+            }
+        });
+    });
+});
 </script>
 
 </body>

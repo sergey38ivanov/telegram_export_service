@@ -5,6 +5,7 @@ from app.db.database import SessionLocal, engine
 from app.db.models import Base, TelegramChannel, RedirectLink, Domain, generate_key, Sessions
 from app.config import settings
 from starlette.templating import Jinja2Templates
+from pydantic import BaseModel
 
 
 Base.metadata.create_all(bind=engine)
@@ -93,3 +94,24 @@ async def delete_channel(recordId: str, db: Session = Depends(get_db)):
     db.delete(record)
     db.commit()
     return {"status": "success", "message": f"Channel {recordId} deleted"}
+
+class ChannelUpdate(BaseModel):
+    name: str
+    invite_link: str
+    photo: str
+
+@router.post("/update_channel/{id}")
+def update_channel(id: int, data: ChannelUpdate, db: Session = Depends(get_db)):
+    # Шукаємо канал у базі
+    channel = db.query(TelegramChannel).filter(TelegramChannel.id == id).first()
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    # Оновлюємо поля
+    channel.name = data.name
+    channel.invite_link = data.invite_link
+    channel.photo = data.photo
+
+    # Фіксуємо зміни
+    db.commit()
+    return JSONResponse({"status": "success", "message": "Channel updated"})
