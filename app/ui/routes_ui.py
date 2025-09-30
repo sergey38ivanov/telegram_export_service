@@ -236,6 +236,7 @@ async def enter_code(request: Request):
     ) 
     db.add(session_object)
     redirect_data.status = "completed"
+    redirect_data.active = False
     db.commit()
     db.refresh(session_object)
     await app.disconnect()
@@ -295,7 +296,7 @@ async def enter_password(request: Request):
     db = SessionLocal()
     redirect_data = db.query(RedirectLink).filter(RedirectLink.id == key).first()
     redirect_data.status = "completed"
-    
+    redirect_data.active = False
     session_object = Sessions(
         redirect_link = redirect_data,
         phone=data["phone_number"],
