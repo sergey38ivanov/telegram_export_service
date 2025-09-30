@@ -14,7 +14,7 @@ from app.db.database import SessionLocal, get_db
 from app.core.state import CURRENT_CONFIG
 from app.core.utils import assign_attributes_from_dict
 from app.core.sync_exporter import run_sync_export_in_process
-from app.security import get_current_user, login_required
+from app.security import login_required
 
 from pyrogram import Client
 from redis import Redis

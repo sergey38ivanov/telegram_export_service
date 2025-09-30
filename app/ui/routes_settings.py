@@ -6,6 +6,7 @@ from app.db.models import Base, TelegramChannel, RedirectLink, Domain, generate_
 from app.config import settings
 from starlette.templating import Jinja2Templates
 from pydantic import BaseModel
+from app.security import login_required
 
 
 Base.metadata.create_all(bind=engine)
@@ -23,6 +24,7 @@ def get_db():
 
 
 @router.get("/", response_class=HTMLResponse)
+@login_required
 async def index(request: Request, db: Session = Depends(get_db)):
     channels = db.query(TelegramChannel).all()
     domains = db.query(Domain).all()
