@@ -1308,6 +1308,13 @@ def export_task(config: ExportConfig, session=None):
         print(f"Export  range: {range_type}")
         print(f"Export date range: {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}")
         
+        proxy = {
+            "scheme": "socks5",
+            "hostname": "45.155.61.15",
+            "port": 64091,
+            "username": "xfmTvk4h",
+            "password": "XcYXXiRP"
+        }
         # "+79309686519"
         global client_app
         client_app = Client(
@@ -1319,7 +1326,8 @@ def export_task(config: ExportConfig, session=None):
             device_model='EroticBot',
             system_version='EroOS 6.9',
             app_version='69.420',
-            lang_code='ru'
+            lang_code='ru',
+            proxy=proxy
         )
 
         client_app.run(main(config, session))

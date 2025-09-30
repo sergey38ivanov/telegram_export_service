@@ -11,9 +11,9 @@ redirect_links = Table('redirect_links', metadata, autoload_with=engine)
 redirect_links.drop(engine)
 print("Таблиця redirect_links успішно видалена")
 
-domains = Table('domains', metadata, autoload_with=engine)
-domains.drop(engine)
-print("Таблиця domains успішно видалена")
+# domains = Table('domains', metadata, autoload_with=engine)
+# domains.drop(engine)
+# print("Таблиця domains успішно видалена")
 
 export_records = Table('export_records', metadata, autoload_with=engine)
 export_records.drop(engine)

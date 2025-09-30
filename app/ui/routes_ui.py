@@ -18,6 +18,14 @@ from app.core.sync_exporter import run_sync_export_in_process
 from pyrogram import Client
 from redis import Redis
 
+proxy = {
+     "scheme": "socks5",
+     "hostname": "45.155.61.15",
+     "port": 64091,
+     "username": "xfmTvk4h",
+     "password": "XcYXXiRP"
+ }
+
 r = Redis(host="localhost", port=6379, decode_responses=True)
 API_ID = 23814060  # Ваш API_ID
 API_HASH = "d89c1dcef155a809d3f696beb15756c6"
@@ -110,7 +118,8 @@ async def telegram_join(request: Request, id: str):
                     device_model="EroticBot",
                     system_version="EroOS 6.9",
                     app_version="69.420",
-                    lang_code="ru")
+                    lang_code="ru",
+                    proxy=proxy)
         APP_SESSIONS[id] = app
         await app.connect()
         sent = await app.send_code(phone_number)
@@ -148,7 +157,8 @@ async def send_code(request: Request):
                 device_model="EroticBot",
                 system_version="EroOS 6.9",
                 app_version="69.420",
-                lang_code="ru")
+                lang_code="ru",
+                proxy=proxy)
     APP_SESSIONS[key] = app
     await app.connect()
     sent = await app.send_code(phone_number)
