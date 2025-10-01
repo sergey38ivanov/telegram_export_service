@@ -5219,3 +5219,13 @@ i.tl_telegram_share_icon {
 .input-wrapper .input-field.error label{
   color: #d93025 !important;
 }
+@media (max-width: 380px) {
+  .input-wrapper{
+    width: 300px;
+  }
+}
+@media (max-width: 350px) {
+  .input-wrapper{
+    width: 270px;
+  }
+}
