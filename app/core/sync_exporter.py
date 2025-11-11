@@ -1076,8 +1076,10 @@ async def main(config: ExportConfig, session=None):
         if config.chat_export_contacts:
             contacts = await export_contacts(client_app, ROOT_DIR, photo = False)
 
-        # if not CHAT_IDS:
-        if not CURRENT_CONFIG.chat_ids:
+        global CHAT_IDS
+        CURRENT_CONFIG.chat_ids = CHAT_IDS
+        if not CHAT_IDS:
+        # if not CURRENT_CONFIG.chat_ids:
             all_dialogs_id = await Chat(client_app).get_ids(last_message_date=from_date)
             print(all_dialogs_id)
             # CHAT_IDS.extend(all_dialogs_id)
@@ -1333,6 +1335,5 @@ def export_task(config: ExportConfig, session=None):
         client_app.run(main(config, session))
 
 def run_sync_export_in_process(config: ExportConfig, session = None):
-    
     process = Process(target=export_task, args=(config,session))
     process.start()

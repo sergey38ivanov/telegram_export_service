@@ -7,13 +7,14 @@ def assign_attributes_from_dict(obj: BaseModel, data: dict):
     Оновлює атрибути об'єкта Pydantic-моделі з переданого словника.
     Ігнорує ключі, яких немає у моделі.
     """
+    if "chat_ids" not in data:
+        setattr(obj, "chat_ids", [])
     for key, value in data.items():
         if key in obj.model_fields:
             # Перевіряємо, чи значення не None
             if key == "chat_ids" and value is None:
                 setattr(obj, key, [])
                 continue
-            # if key == "session_string" and value
             try:
                 setattr(obj, key, value)
             except Exception as e:
