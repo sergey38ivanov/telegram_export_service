@@ -17,9 +17,9 @@ class Chat:
         dialog_ids = []
         async for dialog in self.app.get_dialogs():
             # print(dialog)
-            if dialog.top_message.date and last_message_date:
-                if dialog.top_message.date < last_message_date:
-                    continue
+            # if dialog.top_message.date and last_message_date:
+            #     if dialog.top_message.date < last_message_date:
+            #         continue
             # TODO: private channel
             # but this is for all channels
             if CHAT_EXPORT['public_channels'] is True: 
