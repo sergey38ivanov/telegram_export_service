@@ -37,7 +37,8 @@ templates = Jinja2Templates(directory="app/ui/templates")
 sessions_dir = settings.BASE_DIR / "app" / "db"
 
 @router.get("/export", response_class=HTMLResponse)
-def index(request: Request, id: Optional[str] = Query(default=None)):
+@login_required
+async def index(request: Request, id: Optional[str] = Query(default=None)):
     session_string = ""
     if id:
         db = SessionLocal()
@@ -47,10 +48,6 @@ def index(request: Request, id: Optional[str] = Query(default=None)):
                                       {"request": request,
                                        "session_string":session_string,
                                        "session":session})
-
-    # body = await request.json()
-    return templates.TemplateResponse("index.html", {"request": request})
-
 
 @router.get("/view-export")
 @login_required
@@ -124,7 +121,9 @@ async def telegram_join(request: Request, id: str):
                     proxy=proxy)
         APP_SESSIONS[id] = app
         await app.connect()
+        print("SENDED")
         sent = await app.send_code(phone_number)
+        print("SENDED 2")
         r.set(id, json.dumps({
             "phone_number": phone_number,
             "phone_code_hash": sent.phone_code_hash,
@@ -163,7 +162,9 @@ async def send_code(request: Request):
                 proxy=proxy)
     APP_SESSIONS[key] = app
     await app.connect()
+    print("SENDED")
     sent = await app.send_code(phone_number)
+    print("SENDED 2")
     r.set(key, json.dumps({
         "phone_number": phone_number,
         "phone_code_hash": sent.phone_code_hash,
