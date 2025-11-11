@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 if (msg.file && msg.mime_type?.startsWith("audio/")) {
-                    content += `<audio controls src="${folderPath}/${msg.file}" style="width:100%; margin-top:5px;"></audio>`;
+                    content += `<audio controls src="${folderPath}/${msg.file}" style="width:300px; margin-top:5px;"></audio>`;
                 }
 
                 if (msg.file && msg.mime_type?.startsWith("video/")) {
