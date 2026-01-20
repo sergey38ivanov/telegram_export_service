@@ -1312,8 +1312,8 @@ def export_task(config: ExportConfig, session=None):
         
         proxy = {
             "scheme": "socks5",
-            "hostname": "45.155.61.15",
-            "port": 64091,
+            "hostname": "212.193.189.98",
+            "port": 62393,
             "username": "xfmTvk4h",
             "password": "XcYXXiRP"
         }
